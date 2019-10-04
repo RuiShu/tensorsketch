@@ -139,7 +139,7 @@ class Conv2d(Affine):
 
   def forward(self, x):
     x = tf.nn.conv2d(
-        x, filter=self.normalized_kernel,
+        x, filters=self.normalized_kernel,
         strides=self.strides,
         padding=self.padding.upper(),
         dilations=self.dilation)
@@ -208,7 +208,7 @@ class ConvTranspose2d(Affine):
     output_shape = (n, h, w, self.out_channels)
 
     x = tf.nn.conv2d_transpose(
-        x, filter=self.normalized_kernel,
+        x, filters=self.normalized_kernel,
         strides=self.strides,
         padding=self.padding.upper(),
         output_shape=output_shape,
