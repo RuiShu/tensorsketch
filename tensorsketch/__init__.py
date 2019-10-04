@@ -12,32 +12,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Modifications copyright (C) 2019 Rui Shu
 
 # python3
 """Tensorsketch API.
 """
 
 # pylint: disable=g-bad-import-order
-from weak_disentangle.tensorsketch.modules import Module
-from weak_disentangle.tensorsketch.modules import ModuleList
-from weak_disentangle.tensorsketch.modules import Sequential
+from tensorsketch.modules import Module
+from tensorsketch.modules import ModuleList
+from tensorsketch.modules import Sequential
 
-from weak_disentangle.tensorsketch.modules import Affine
-from weak_disentangle.tensorsketch.modules import Dense
-from weak_disentangle.tensorsketch.modules import Conv2d
-from weak_disentangle.tensorsketch.modules import ConvTranspose2d
+from tensorsketch.modules import Affine
+from tensorsketch.modules import Dense
+from tensorsketch.modules import Conv2d
+from tensorsketch.modules import ConvTranspose2d
 
-from weak_disentangle.tensorsketch.modules import Flatten
-from weak_disentangle.tensorsketch.modules import Reshape
+from tensorsketch.modules import Flatten
+from tensorsketch.modules import Reshape
 
-from weak_disentangle.tensorsketch.modules import ReLU
-from weak_disentangle.tensorsketch.modules import LeakyReLU
-from weak_disentangle.tensorsketch.modules import Sigmoid
+from tensorsketch.modules import ReLU
+from tensorsketch.modules import LeakyReLU
+from tensorsketch.modules import Sigmoid
 
-from weak_disentangle.tensorsketch.normalization import BatchNorm
-from weak_disentangle.tensorsketch.normalization import SpectralNorm
-from weak_disentangle.tensorsketch.normalization import WeightNorm
-from weak_disentangle.tensorsketch.normalization import RunningNorm
+from tensorsketch.normalization import BatchNorm
+from tensorsketch.normalization import SpectralNorm
+from tensorsketch.normalization import WeightNorm
+from tensorsketch.normalization import RunningNorm
 
-from weak_disentangle.tensorsketch.utils import advanced_function
-from weak_disentangle.tensorsketch.utils import reset_tf_function
+from tensorsketch.utils import advanced_function
+from tensorsketch.utils import reset_tf_function

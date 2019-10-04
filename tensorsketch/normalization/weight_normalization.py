@@ -12,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Modifications copyright (C) 2019 Rui Shu
 
 # python3
 """Weight normalization utilities."""
@@ -19,8 +21,8 @@
 # pylint: disable=g-importing-member, g-bad-import-order
 import tensorflow as tf
 
-from weak_disentangle.tensorsketch.modules.base import build_with_name_scope
-from weak_disentangle.tensorsketch.normalization.base import KernelNorm
+from tensorsketch.modules.base import build_with_name_scope
+from tensorsketch.normalization.base import KernelNorm
 
 
 class WeightNorm(KernelNorm):

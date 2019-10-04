@@ -12,13 +12,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Modifications copyright (C) 2019 Rui Shu
 
 # python3
 """Normalization API.
 """
 
 # pylint: disable=g-bad-import-order
-from weak_disentangle.tensorsketch.normalization.spectral_normalization import SpectralNorm
-from weak_disentangle.tensorsketch.normalization.batch_normalization import BatchNorm
-from weak_disentangle.tensorsketch.normalization.weight_normalization import WeightNorm
-from weak_disentangle.tensorsketch.normalization.running_normalization import RunningNorm
+from tensorsketch.normalization.spectral_normalization import SpectralNorm
+from tensorsketch.normalization.batch_normalization import BatchNorm
+from tensorsketch.normalization.weight_normalization import WeightNorm
+from tensorsketch.normalization.running_normalization import RunningNorm

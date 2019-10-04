@@ -12,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Modifications copyright (C) 2019 Rui Shu
 
 # python3
 """Affine modules.
@@ -22,9 +24,9 @@ import numpy as np
 import tensorflow as tf
 from collections import OrderedDict
 
-from weak_disentangle.tensorsketch import utils as tsu
-from weak_disentangle.tensorsketch.modules.base import build_with_name_scope
-from weak_disentangle.tensorsketch.modules.base import Module
+from tensorsketch import utils as tsu
+from tensorsketch.modules.base import build_with_name_scope
+from tensorsketch.modules.base import Module
 
 
 class Affine(Module):

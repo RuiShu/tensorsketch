@@ -12,24 +12,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Modifications copyright (C) 2019 Rui Shu
 
 # python3
 """Modules API.
 """
 
 # pylint: disable=g-bad-import-order
-from weak_disentangle.tensorsketch.modules.base import Module
-from weak_disentangle.tensorsketch.modules.base import ModuleList
-from weak_disentangle.tensorsketch.modules.base import Sequential
+from tensorsketch.modules.base import Module
+from tensorsketch.modules.base import ModuleList
+from tensorsketch.modules.base import Sequential
 
-from weak_disentangle.tensorsketch.modules.shape import Flatten
-from weak_disentangle.tensorsketch.modules.shape import Reshape
+from tensorsketch.modules.shape import Flatten
+from tensorsketch.modules.shape import Reshape
 
-from weak_disentangle.tensorsketch.modules.affine import Affine
-from weak_disentangle.tensorsketch.modules.affine import Dense
-from weak_disentangle.tensorsketch.modules.affine import Conv2d
-from weak_disentangle.tensorsketch.modules.affine import ConvTranspose2d
+from tensorsketch.modules.affine import Affine
+from tensorsketch.modules.affine import Dense
+from tensorsketch.modules.affine import Conv2d
+from tensorsketch.modules.affine import ConvTranspose2d
 
-from weak_disentangle.tensorsketch.modules.activation import ReLU
-from weak_disentangle.tensorsketch.modules.activation import LeakyReLU
-from weak_disentangle.tensorsketch.modules.activation import Sigmoid
+from tensorsketch.modules.activation import ReLU
+from tensorsketch.modules.activation import LeakyReLU
+from tensorsketch.modules.activation import Sigmoid
