@@ -1,3 +1,9 @@
+This project is a fork of Tensorsketch (copyright The Google Research
+Authors) written during my summer internship at Google Brain, and distributed
+under the Apache 2.0 License.
+
+All subsequent modifications are made available under the following MIT license:
+
 MIT License
 
 Copyright (c) 2019 Rui Shu
