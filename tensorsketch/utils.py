@@ -12,10 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Modifications copyright (C) 2019 Rui Shu
 
 # python3
-"""Tensorsketch utilities.
-"""
+"""Tensorsketch utilities."""
 
 import numpy as np
 import tensorflow as tf
