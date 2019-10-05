@@ -15,7 +15,7 @@ import os
 
 setup(
     name="tensorsketch",
-    version="0.0.0",
+    version="0.1.0",
     license="MIT",
     description="Lightweight deep learning library for TensorFlow 2.0",
     url="http://www.github.com/RuiShu/tensorsketch",
