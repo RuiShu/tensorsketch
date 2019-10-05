@@ -36,7 +36,7 @@ model = ts.Sequential(
 
 model.apply(SpectralNorm.add, targets=(ts.Dense, ts.Conv2d))
 opt = tf.keras.optimizers.Adam()
-print(model.read(model.WITH_VARS))
+print(model.read(model.WITH_SIGNATURE))
 
 @tf.function
 def call():

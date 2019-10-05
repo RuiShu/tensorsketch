@@ -60,7 +60,7 @@ class Module(tf.Module):
 
   # Levels of read priority
   WITH_NAMES = 0
-  WITH_EXTRA = 1
+  WITH_SIGNATURE = 1
   WITH_VARS = 2
   WITH_DTYPE = 3
   WITH_NUMPY = 4
@@ -198,11 +198,11 @@ class Module(tf.Module):
     return Repr(self.to_string(verbose, trainable))
 
   def to_string(self, verbose=0, trainable=None):
-    # Level 0: only names
-    # Level 1: Level 0 + extra repr
-    # Level 2: Level 1 + variable names and info
-    # Level 3: Level 2 + dtype info
-    # Level 4: Level 3 + actual variable info (shortened)
+    # Level 0: names
+    # Level 1: + extra repr (i.e. module signature)
+    # Level 2: + variable names and info
+    # Level 3: + dtype info
+    # Level 4: + actual variable info (shortened)
     main = self.name
     if verbose >= 1:
       main += self.extra_repr()
