@@ -137,6 +137,7 @@ class Module(tf.Module):
       filter_fn = lambda m: True
 
     self._apply(fn, filter_fn)
+    return self
 
   def _apply(self, fn, filter_fn):
     # Apply fn to children first before applying to parent
