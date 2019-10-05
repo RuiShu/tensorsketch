@@ -17,10 +17,10 @@ setup(
     name="tensorsketch",
     version="0.0.0",
     license="MIT",
-    description="Lightweight deep learing library for TensorFlow 2.0",
+    description="Lightweight deep learning library for TensorFlow 2.0",
     url="http://www.github.com/RuiShu/tensorsketch",
     packages=find_packages(),
-    install_requires = ["numpy", "tensorflow"],
+    install_requires = ["numpy"],
     author="Rui Shu",
     author_email="ruishu@stanford.edu",
 )
