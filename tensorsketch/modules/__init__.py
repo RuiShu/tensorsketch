@@ -32,6 +32,15 @@ from tensorsketch.modules.affine import Dense
 from tensorsketch.modules.affine import Conv2d
 from tensorsketch.modules.affine import ConvTranspose2d
 
+from tensorsketch.modules.norm import InstanceNorm
+from tensorsketch.modules.norm import SpectralNorm
+from tensorsketch.modules.norm import BatchNorm
+from tensorsketch.modules.norm import WeightNorm
+
 from tensorsketch.modules.activation import ReLU
+from tensorsketch.modules.activation import Identity
 from tensorsketch.modules.activation import LeakyReLU
 from tensorsketch.modules.activation import Sigmoid
+
+from tensorsketch.modules.pool import MaxPool
+from tensorsketch.modules.pool import AvgPool

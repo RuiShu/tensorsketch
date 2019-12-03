@@ -20,6 +20,11 @@
 
 import numpy as np
 import tensorflow as tf
+import re
+import inspect
+import os
+from contextlib import contextmanager
+from functools import partial
 
 
 # String utilities
@@ -40,6 +45,22 @@ def shorten(string, num_lines=4):
 def indent(string, spaces=4):
   strings = string.split("\n")
   return "\n".join([" " * spaces + string for string in strings])
+
+
+def snake(string):
+  """Convert string to snake case
+
+  Implementation must be consistent with tf.Module's camel_to_snake in
+  github.com/tensorflow/tensorflow/blob/master/tensorflow/python/module/module.py
+  """
+  return re.sub(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))", r"_\1", string).lower()
+
+
+def class_name(cls):
+  if cls.DEFAULT_NAME is not None:
+    return cls.DEFAULT_NAME
+  else:
+    return snake(cls.__name__)
 
 
 # Tensor utilities
@@ -131,9 +152,83 @@ class Function(object):
     return self.tf_function(*args, **kwargs)
 
 
-def advanced_function(function):
-  return Function(function)
+def function(python_function):
+  return Function(python_function)
 
 
-def reset_tf_function(tf_function):
+def reset_function(tf_function):
   return tf.function(tf_function.python_function)
+
+
+class Init(object):
+  """A class for handling object signature for initializations.
+  """
+
+  def __init__(self, *args, **kwargs):
+    self.args = args
+    self.kwargs = kwargs
+
+
+def enable_xla():
+  os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=2'
+
+
+def suppress_tensorflow_logging():
+  os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+  tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+
+# Optimizer utilities
+def minimize(loss, variables, tape, optimizer):
+  grads = tape.gradient(loss, variables)
+  optimizer.apply_gradients(zip(grads, variables))
+
+
+def shadow(ema, model, momentum):
+    for a, b in zip(ema.variables, model.variables):
+        if b.trainable:
+            ts.assign_moving_average(a, b, momentum)
+        else:
+            ts.assign_moving_average(a, b, 0)
+
+
+# Context utilities
+@contextmanager
+def train_mode(*modules, training=True):
+  modes = []
+  try:
+    for m in modules:
+      modes.append(m.training)
+      m.train(training)
+    yield
+
+  finally:
+    for m, mode in zip(modules, modes):
+      m.train(mode)
+
+
+@contextmanager
+def eval_mode(*modules):
+  with train_mode(*modules, training=False):
+    try:
+      yield
+    finally:
+      pass
+
+
+@contextmanager
+def detach_statistics(module, detach=True):
+  def attach(flag, m):
+    if hasattr(m, "ignore_statistics"):
+      m.ignore_statistics = flag
+
+  try:
+    if detach:
+      module.apply(partial(attach, True))
+    yield
+
+  finally:
+    if detach:
+      module.apply(partial(attach, False))
+
+
