@@ -33,10 +33,9 @@ class Affine(Module):
   """Abstract class for modules that apply an affine transformation to input.
 
   Affine includes several special functionalities to ensure that classes that
-  extend it are amenable to the injection of kernel normalizers (based on the
-  respects_kernel_norm flag). All classes that extend Affine should adhere to
-  the following contract: Never access self.orig_kernel directly in forward
-  call, and parameter initialization/building.
+  extend it are amenable to the injection of parameter hooks. All classes that
+  extend Affine should adhere to the following contract: Never access
+  self.kernel directly in forward call.
   """
 
   def __init__(self, bias=True, name=None, initializer=None):
@@ -45,14 +44,24 @@ class Affine(Module):
     self.kernel = None
     self.bias = None
     self.initializer = initializer
-    self.kernel_normalizers = OrderedDict()
+
+    # Initialize parameter hook types
+    self.hooks["kernel"] = OrderedDict()
+    self.hooks["bias"] = OrderedDict()
 
   @property
-  def normalized_kernel(self):
+  def hooked_kernel(self):
     kernel = self.kernel
-    for km in self.kernel_normalizers.values():
-      kernel = km(kernel)
+    for kh in self.hooks["kernel"].values():
+      kernel = kh(kernel)
     return kernel
+
+  @property
+  def hooked_bias(self):
+    bias = self.bias
+    for kh in self.hooks["bias"].values():
+      bias = kh(bias)
+    return bias
 
   @build_with_name_scope
   def build_parameters(self, x):
@@ -93,10 +102,10 @@ class Dense(Affine):
     self.reset_parameters()
 
   def forward(self, x):
-    x = tf.matmul(x, self.normalized_kernel)
+    x = tf.matmul(x, self.hooked_kernel)
 
-    if self.bias is not None:
-      x = tf.nn.bias_add(x, self.bias)
+    if self.use_bias:
+      x = tf.nn.bias_add(x, self.hooked_bias)
     return x
 
   def extra_repr(self):
@@ -139,13 +148,13 @@ class Conv2d(Affine):
 
   def forward(self, x):
     x = tf.nn.conv2d(
-        x, filters=self.normalized_kernel,
+        x, filters=self.hooked_kernel,
         strides=self.strides,
         padding=self.padding.upper(),
         dilations=self.dilation)
 
     if self.use_bias:
-      x = tf.nn.bias_add(x, self.bias)
+      x = tf.nn.bias_add(x, self.hooked_bias)
     return x
 
   def extra_repr(self):
@@ -208,14 +217,14 @@ class ConvTranspose2d(Affine):
     output_shape = (n, h, w, self.out_channels)
 
     x = tf.nn.conv2d_transpose(
-        x, filters=self.normalized_kernel,
+        x, filters=self.hooked_kernel,
         strides=self.strides,
         padding=self.padding.upper(),
         output_shape=output_shape,
         dilations=self.dilation)
 
     if self.use_bias:
-      x = tf.nn.bias_add(x, self.bias)
+      x = tf.nn.bias_add(x, self.hooked_bias)
     return x
 
   def extra_repr(self):
