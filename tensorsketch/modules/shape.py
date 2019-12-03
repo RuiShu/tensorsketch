@@ -37,8 +37,8 @@ class Reshape(Module):
   """Reshape the input.
   """
 
-  def __init__(self, shape):
-    super().__init__()
+  def __init__(self, shape, name=None):
+    super().__init__(name=name)
     self.shape = shape
 
   def forward(self, x):
