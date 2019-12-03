@@ -59,11 +59,15 @@ class Module(tf.Module):
   """
 
   # Levels of read priority
-  WITH_NAMES = 0
-  WITH_SIGNATURE = 1
-  WITH_VARS = 2
-  WITH_DTYPE = 3
-  WITH_NUMPY = 4
+  WITH_NAME = 1
+  WITH_SIG = 2
+  WITH_VARS = 3
+  WITH_DTYPE = 4
+  WITH_NUMPY = 5
+
+  # Class variables
+  DEFAULT_NAME = None
+  DEFAULT_HOOK_TYPE = "out"
 
   def __init__(self, name=None):
     """Module initializer.
@@ -76,12 +80,17 @@ class Module(tf.Module):
     self.__dict__["_blacklist"] = set()
     self.__dict__["_child_modules"] = OrderedDict()
     self.__dict__["_variables"] = OrderedDict()
+    if name is None and self.DEFAULT_NAME is not None:
+      name = self.DEFAULT_NAME
     super().__init__(name=name)
 
     self.training = True
     self.built = False
-    self.in_hooks = OrderedDict()
-    self.out_hooks = OrderedDict()
+    self.hooks = {}
+    self.hooks["in"] = OrderedDict()
+    self.hooks["out"] = OrderedDict()
+    self.hooks["seq"] = OrderedDict()
+    self.hook_to_type = OrderedDict()
 
   def __setattr__(self, name, value):
     # We catch non-blacklisted variables for the purposes of repr construction
@@ -116,27 +125,26 @@ class Module(tf.Module):
 
     super().__delattr__(name)
 
-  def select_hooks_dict(self, in_hook):
-    if in_hook:
-      return self.in_hooks
-    else:
-      return self.out_hooks
-
   def train(self, mode=True):
-    self.training = mode
-    for m in self.submodules:
+    for m in reversed(self._child_modules.values()):
       m.train(mode)
+    self.training = mode
 
-  def apply(self, fn, filter_fn=None, targets=None):
+  def eval(self):
+    self.train(False)
+
+  def apply(self, fn, targets=None, filter_fn=None):
     # Light wrapper to parse filter_fn and targets args
-    if targets is not None:
-      assert filter_fn is None, "Cannot use both filter_fn and targets"
-      filter_fn = lambda m: isinstance(m, targets)
+    if targets is None:
+      target_fn = lambda m: True
+    else:
+      target_fn = lambda m: isinstance(m, targets)
 
-    elif filter_fn is None:
+    if filter_fn is None:
       filter_fn = lambda m: True
 
-    self._apply(fn, filter_fn)
+    combined_fn = lambda m: target_fn(m) and filter_fn(m)
+    self._apply(fn, combined_fn)
     return self
 
   def _apply(self, fn, filter_fn):
@@ -150,14 +158,14 @@ class Module(tf.Module):
     if filter_fn(self):
       fn(self)
 
-  def eval(self):
-    self.train(False)
-
   def build(self, *shapes, once=True):
-    if once:
-      assert not self.built, "{}.built already True".format(self.name)
     tensors = tsu.shapes_to_zeros(*shapes)
     self(*tensors)
+    return self
+
+  def reinit(self):
+    reset = lambda m: m.reset_parameters()
+    self.apply(reset)
     return self
 
   @build_with_name_scope
@@ -168,24 +176,62 @@ class Module(tf.Module):
     pass
 
   def forward(self, *inputs):
-    return inputs
+    raise NotImplementedError
+
+  @classmethod
+  def add(cls, module, init=tsu.Init(), hook_name=None, hook_type=None):
+    if hook_type is None:
+      hook_type = cls.DEFAULT_HOOK_TYPE
+
+    # Create submodule to use as hook
+    submodule = cls(name=hook_name, *init.args, **init.kwargs)
+    hook_name = submodule.name  # Replaces hook_name if originally None
+
+    # Check if hook is already registered
+    assert not hasattr(module, hook_name), (
+      "{} already an attribute of module {}".format(hook_name,
+                                                    module.name))
+    assert hook_name not in module.hooks[hook_type], (
+      "{} already in {}.hooks[\"{}\"]".format(hook_name,
+                                              module.name,
+                                              hook_type))
+
+    # Remove passing in of parent module if hook_type is in/out
+    if hook_type in {"in", "out"}:
+      hook = lambda self, *inputs: submodule(*inputs)
+    else:
+      hook = submodule
+
+    setattr(module, hook_name, submodule)
+    module.hooks[hook_type].update({hook_name: hook})
+    module.hook_to_type.update({hook_name: hook_type})
+
+  @classmethod
+  def remove(cls, module, hook_name=None, hook_type="out"):
+    hook_name = tsu.class_name(cls) if hook_name is None else hook_name
+    delattr(module, hook_name)
+    del module.hooks[hook_type][hook_name]
+    del module.hook_to_type[hook_name]
 
   @tf.Module.with_name_scope
-  def __call__(self, *inputs):
+  def __call__(self, *inputs, **kwargs):
     if not self.built:
       self.build_parameters(*inputs)
 
-    for hook in self.in_hooks.values():
+    for hook in self.hooks["in"].values():
       response = hook(self, *inputs)
       if response is not None:
         inputs = tsu.pack(response)
 
-    outputs = self.forward(*inputs)
+    outputs = self.forward(*inputs, **kwargs)
 
-    for hook in self.out_hooks.values():
+    for hook in self.hooks["out"].values():
       response = hook(self, *tsu.pack(outputs))
       if response is not None:
         outputs = response
+
+    for hook in self.hooks["seq"].values():
+      outputs = hook(*tsu.pack(outputs))
 
     return outputs
 
@@ -196,19 +242,24 @@ class Module(tf.Module):
     return ""
 
   def read(self, verbose=0, trainable=None):
+    # Wrap string as Repr object
     return Repr(self.to_string(verbose, trainable))
 
   def to_string(self, verbose=0, trainable=None):
-    # Level 0: names
+    # Level 0: class name
     # Level 1: + extra repr (i.e. module signature)
     # Level 2: + variable names and info
     # Level 3: + dtype info
     # Level 4: + actual variable info (shortened)
-    main = self.name
-    if verbose >= 1:
+    main = self.__class__.__name__
+
+    if verbose >= self.WITH_NAME:
+      main += ":{}".format(self.name)
+
+    if verbose >= self.WITH_SIG:
       main += self.extra_repr()
 
-    if verbose >= 2:
+    if verbose >= self.WITH_VARS:
       var_body = "\n"
       for (name, var) in self._variables.items():
         # Skip non-trainable variables if filtering by trainability
@@ -218,31 +269,54 @@ class Module(tf.Module):
         # pylint: disable=protected-access
         var_body += "{}.{}: shape={}".format(self.name, name,
                                              var._shape_tuple())
-        if verbose >= 3:
+        if verbose >= self.WITH_DTYPE:
           var_body += ", dtype={}".format(repr(var.dtype))
         if var.trainable:
-          var_body += " {train}"
-        if verbose >= 4:
+          var_body += " --train"
+        if verbose >= self.WITH_NUMPY:
           var_body += "\n" + tsu.indent(tsu.shorten(str(var.numpy())))
         var_body += "\n"
 
       main += tsu.indent(var_body).rstrip()
 
     body = "\n"
-    for module in self._child_modules.values():
-      body += module.to_string(verbose, trainable) + "\n"
+    module_groups = self.group_child_modules()
+    for hook_type, module_group in module_groups.items():
+      for module in module_group:
+        if hook_type is not None:
+          body += "{}::".format(hook_type)
+        body += module.to_string(verbose, trainable) + "\n"
     main += tsu.indent(body).rstrip()
 
-    # Wrap string as Repr object
     return main
 
-  def flatten_modules(self, filter_fn=None, targets=None):
-    # Returns a flattened version of tree in reverse topological order
+  def group_child_modules(self):
+    # Prioritize based on: else, in, out, seq
+    groups = OrderedDict()
+    groups.update({None: []})
+    special_types = set(self.hook_to_type.values()) - {"in", "out", "seq"}
+    for hook_type in special_types:
+        groups.update({hook_type: []})
+    for hook_type in ("in", "out", "seq"):
+        groups.update({hook_type: []})
+
+    for name, module in self._child_modules.items():
+      if name in self.hook_to_type:
+        groups[self.hook_to_type[name]].append(module)
+      else:
+        groups[None].append(module)
+    return groups
+
+  def flatten_modules(self, targets=None, filter_fn=None, reverse=False):
+    # Returns a flattened version of tree in topo+chrono order
     module_list = []
     def collect(m):
       module_list.append(m)
-    self.apply(collect, filter_fn, targets)
-    return list(reversed(module_list))
+    self.apply(collect, targets, filter_fn)
+    if reverse:
+      return list(module_list)
+    else:
+      return list(reversed(module_list))
 
 
 class ModuleList(Module):
@@ -297,7 +371,12 @@ class Sequential(ModuleList):
   """Stores a list of modules that can be daisy-chained in forward call.
   """
 
-  def forward(self, *inputs):
-    for module in self.modules:
+  def forward(self, inputs, slice=None):
+    if slice:
+      modules = self.modules[slice]
+    else:
+      modules = self.modules
+
+    for module in modules:
       inputs = module(*tsu.pack(inputs))
     return inputs
