@@ -25,11 +25,20 @@ import tensorflow as tf
 from tensorsketch.modules.base import Module
 
 
+class Identity(Module):
+  """Returns the original inputs
+  """
+  def forward(self, *inputs):
+    return inputs
+
+
 class ReLU(Module):
   """Applies rectified-linear activation to input.
   """
 
-  def __init__(self, name="relu"):
+  DEFAULT_NAME = "relu"
+
+  def __init__(self, name=None):
     super().__init__(name=name)
 
   def forward(self, x):
@@ -40,7 +49,9 @@ class LeakyReLU(Module):
   """Applies leaky rectified-linear activation to input.
   """
 
-  def __init__(self, alpha=0.2, name="leaky_relu"):
+  DEFAULT_NAME = "leaky_relu"
+
+  def __init__(self, alpha=0.2, name=None):
     super().__init__(name=name)
     self.alpha = alpha
 
@@ -54,6 +65,5 @@ class LeakyReLU(Module):
 class Sigmoid(Module):
   """Sigmoid activation.
   """
-
   def forward(self, x):
     return tf.math.sigmoid(x)
